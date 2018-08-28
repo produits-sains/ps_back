@@ -1,13 +1,31 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
-extern crate rocket;
+#[macro_use]
+extern crate serde_derive;
 
-#[get("/")]
-fn index() -> &'static str {
-  "Hello, world!"
+extern crate rocket;
+extern crate rocket_contrib;
+extern crate dotenv;
+
+use dotenv::dotenv;
+
+mod database;
+mod models;
+mod picard;
+
+
+
+fn grab_env_vars() {
+  dotenv().ok(); // Grabbing ENV vars
 }
 
 fn main() {
-  rocket::ignite().mount("/", routes![index]).launch();
+  grab_env_vars();
+
+  let rocket = rocket::ignite().manage(database::create_db_pool());
+
+  let rocket = picard::register_routes(rocket);
+  
+  rocket.launch();
 }
