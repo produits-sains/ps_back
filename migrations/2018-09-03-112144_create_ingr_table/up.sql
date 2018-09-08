@@ -1,0 +1,9 @@
+-- Your SQL goes here
+
+CREATE TABLE ingr ( 
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendor VARCHAR NOT NULL,
+  name VARCHAR NOT NULL,
+  score INTEGER NOT NULL,
+  last_update INTEGER NOT NULL
+);

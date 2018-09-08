@@ -1,16 +1,18 @@
-#![feature(plugin)]
+#![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
 
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate diesel;
 
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate dotenv;
+extern crate serde;
 
 use dotenv::dotenv;
 
 mod database;
+mod schema;
 mod models;
 mod picard;
 

@@ -1,12 +1,13 @@
-extern crate r2d2;
-extern crate r2d2_diesel;
 extern crate diesel;
 extern crate dotenv;
 
 use std::env;
-use self::r2d2::Pool;
-use self::r2d2_diesel::ConnectionManager;
+use std::ops::Deref;
+use self::diesel::r2d2::{Pool, PooledConnection, ConnectionManager};
 use self::diesel::prelude::*;
+use rocket::{Outcome, Request, State};
+use rocket::http::Status;
+use rocket::request::{self, FromRequest};
 
 pub fn create_db_pool() -> Pool<ConnectionManager<SqliteConnection>> {
   println!("env {}", env::var("DATABASE_URL").unwrap_or("DATABASE_URL must be set".to_string()));
@@ -20,8 +21,27 @@ pub fn create_db_pool() -> Pool<ConnectionManager<SqliteConnection>> {
   Pool::new(manager).expect("Failed to create pool.")
 }
 
-#[test]
-fn it_should_load_test_database() {
-  dotenv::from_filename("tests/env_testdatabase").ok();
-  create_db_pool();
+pub struct DbConn(PooledConnection<ConnectionManager<SqliteConnection>>);
+
+
+impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
+    type Error = (); // Associated type, we must have an error we can `Debug`
+
+   fn from_request(request: &'a Request<'r>) -> request::Outcome<DbConn, ()> {
+        let pool = request.guard::<State<Pool<ConnectionManager<SqliteConnection>>>>()?;
+
+        match pool.get() {
+            Ok(conn) => Outcome::Success(DbConn(conn)),
+            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
+        }
+    }
+}
+
+
+impl Deref for DbConn {
+    type Target = SqliteConnection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
